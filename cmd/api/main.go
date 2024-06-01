@@ -1,8 +1,9 @@
 package main
 
 import (
-	"https://github.com/lorenzoMrt/ContentInsight/cmd/api/bootstrap"
 	"log"
+
+	"github.com/lorenzoMrt/ContentInsight/cmd/api/bootstrap"
 )
 
 func main() {

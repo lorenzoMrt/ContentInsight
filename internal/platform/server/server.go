@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"https://github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/health"
+	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/health"
 
 	"github.com/gin-gonic/gin"
 )
