@@ -1,6 +1,8 @@
 package bootstrap
 
-import "https://github.com/lorenzoMrt/ContentInsight/internal/platform/server"
+import (
+	"github.com/lorenzoMrt/ContentInsight/internal/platform/server"
+)
 
 const (
 	host = "localhost"
