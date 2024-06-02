@@ -1,4 +1,4 @@
-package courses
+package contents
 
 import (
 	"encoding/json"
@@ -38,8 +38,8 @@ type Metadata struct {
 func CreateHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req ContentRequest
-		if err := ctx.BindJSON(&req); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		jsonData, err := json.Marshal(req)
