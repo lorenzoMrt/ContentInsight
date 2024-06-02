@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/contents"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/health"
 
 	"github.com/gin-gonic/gin"
@@ -31,4 +32,5 @@ func (s *Server) Run() error {
 
 func (s *Server) registerRoutes() {
 	s.engine.GET("/health", health.CheckHandler())
+	s.engine.POST("/api/contents", contents.CreateHandler())
 }
