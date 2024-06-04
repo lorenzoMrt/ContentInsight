@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	cr "github.com/lorenzoMrt/ContentInsight/internal"
 )
 
 type ContentRequest struct {
@@ -35,7 +36,7 @@ type Metadata struct {
 }
 
 // CreateHandler returns an HTTP handler for courses creation.
-func CreateHandler() gin.HandlerFunc {
+func CreateHandler(contentRepository cr.ContentRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req ContentRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {

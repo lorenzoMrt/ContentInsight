@@ -10,14 +10,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lorenzoMrt/ContentInsight/internal/platform/storage/storagemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestCreateHandler(t *testing.T) {
+	contentRepository := new(storagemocks.ContentRepository)
+	contentRepository.On("Save", mock.Anything, mock.AnythingOfType("cr.Content")).Return(nil)
 	gin.SetMode(gin.TestMode)
 
 	router := gin.Default()
-	router.POST("/create", CreateHandler())
+	router.POST("/create", CreateHandler(contentRepository))
 
 	// Prepare the request payload
 	contentReq := ContentRequest{
