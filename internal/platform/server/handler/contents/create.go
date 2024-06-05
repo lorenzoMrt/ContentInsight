@@ -1,18 +1,15 @@
 package contents
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
 )
 
 type ContentRequest struct {
-	Uuid            uuid.UUID `json:"uuid"`
+	Uuid            string    `json:"uuid" binding:"required"`
 	Title           string    `json:"title"`
 	Description     string    `json:"description"`
 	ContentType     string    `json:"contentType"`
@@ -35,6 +32,15 @@ type Metadata struct {
 	Comments int `json:"comments"`
 }
 
+// Convert ContentRequest.Metadata to cr.Metadata
+func toCrMetadata(metadata Metadata) cr.Metadata {
+	return cr.Metadata{
+		Views:    metadata.Views,
+		Likes:    metadata.Likes,
+		Comments: metadata.Comments,
+	}
+}
+
 // CreateHandler returns an HTTP handler for courses creation.
 func CreateHandler(contentRepository cr.ContentRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -43,15 +49,17 @@ func CreateHandler(contentRepository cr.ContentRepository) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		jsonData, err := json.Marshal(req)
+
+		content, err := cr.NewContent(req.Uuid, req.Title, req.Description, req.ContentType, req.Categories, req.Tags, req.Author, req.PublicationDate, req.ContentURL, req.Duration, req.Language, req.CoverImage, toCrMetadata(req.Metadata), req.Status, req.Source, req.Visibility)
 		if err != nil {
-			fmt.Println("Error serializing to JSON:", err)
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := contentRepository.Save(ctx, content); err != nil {
+			ctx.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		// Convert the JSON byte slice to a string
-		jsonString := string(jsonData)
-
-		ctx.String(http.StatusCreated, jsonString)
+		ctx.String(http.StatusCreated, "Created")
 	}
 }

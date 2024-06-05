@@ -2,10 +2,51 @@ package cr
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrInvalidContentID = errors.New("invalid Content ID")
+
+type ContentID struct {
+	value string
+}
+
+// NewContentID instantiate the VO for ContentID
+func NewContentID(value string) (ContentID, error) {
+	v, err := uuid.Parse(value)
+	if err != nil {
+		return ContentID{}, fmt.Errorf("%w: %s", ErrInvalidContentID, value)
+	}
+
+	return ContentID{
+		value: v.String(),
+	}, nil
+}
+
+func (id ContentID) String() string {
+	return id.value
+}
+
+var ErrEmptyContentTitle = errors.New("The title can not be empty")
+
+type ContentTitle struct {
+	value string
+}
+
+// NewContentTitle instantiate VO for ContentTitle
+func NewContentTitle(value string) (ContentTitle, error) {
+	if value == "" {
+		return ContentTitle{}, ErrEmptyContentTitle
+	}
+
+	return ContentTitle{
+		value: value,
+	}, nil
+}
 
 type ContentRepository interface {
 	Save(ctx context.Context, content Content) error
@@ -14,9 +55,12 @@ type ContentRepository interface {
 //go:generate mockery --case=snake --outpkg=storagemocks --output=platform/storage/storagemocks --name=ContentRepository
 
 type Content struct {
-	uuid            uuid.UUID
-	details         Details
-	classification  Classification
+	id              ContentID
+	title           ContentTitle
+	description     string
+	contentType     string
+	categories      []string
+	tags            []string
 	author          string
 	publicationDate time.Time
 	contentURL      string
@@ -28,30 +72,29 @@ type Content struct {
 	source          string
 	visibility      string
 }
-
-type Details struct {
-	title       string
-	description string
-	contentType string
-}
-
-type Classification struct {
-	categories []string
-	tags       []string
-}
-
 type Metadata struct {
 	Views    int
 	Likes    int
 	Comments int
 }
 
-// Constructor
-func NewContent(uuid uuid.UUID, details Details, classification Classification, author string, publicationDate time.Time, contentUrl string, duration *int, language string, coverImage string, metadata Metadata, status string, source string, visibility string) Content {
+func NewContent(id string, title string, description string, contentType string, categories []string, tags []string, author string, publicationDate time.Time, contentUrl string, duration *int, language string, coverImage string, metadata Metadata, status string, source string, visibility string) (Content, error) {
+	idVO, err := NewContentID(id)
+	if err != nil {
+		return Content{}, err
+	}
+
+	contentTitleVO, err := NewContentTitle(title)
+	if err != nil {
+		return Content{}, err
+	}
 	return Content{
-		uuid:            uuid,
-		details:         details,
-		classification:  classification,
+		id:              idVO,
+		title:           contentTitleVO,
+		description:     description,
+		contentType:     contentType,
+		categories:      categories,
+		tags:            tags,
 		author:          author,
 		publicationDate: publicationDate,
 		contentURL:      contentUrl,
@@ -62,20 +105,27 @@ func NewContent(uuid uuid.UUID, details Details, classification Classification, 
 		status:          status,
 		source:          source,
 		visibility:      visibility,
-	}
+	}, nil
 }
 
 // Getters
-func (c Content) UUID() uuid.UUID {
-	return c.uuid
+func (c Content) ID() ContentID {
+	return c.id
 }
-
-func (c Content) Details() Details {
-	return c.details
+func (c Content) Title() ContentTitle {
+	return c.title
 }
-
-func (c Content) Classification() Classification {
-	return c.classification
+func (c Content) Description() string {
+	return c.description
+}
+func (c Content) ContentType() string {
+	return c.contentType
+}
+func (c Content) Categories() []string {
+	return c.categories
+}
+func (c Content) Tags() []string {
+	return c.tags
 }
 
 func (c Content) Author() string {
