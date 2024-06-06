@@ -48,6 +48,10 @@ func NewContentTitle(value string) (ContentTitle, error) {
 	}, nil
 }
 
+func (title ContentTitle) String() string {
+	return title.value
+}
+
 type ContentRepository interface {
 	Save(ctx context.Context, content Content) error
 }
