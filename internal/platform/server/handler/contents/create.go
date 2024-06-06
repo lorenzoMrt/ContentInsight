@@ -1,11 +1,13 @@
 package contents
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
+	"github.com/lorenzoMrt/ContentInsight/internal/creating"
 )
 
 type ContentRequest struct {
@@ -42,7 +44,7 @@ func toCrMetadata(metadata Metadata) cr.Metadata {
 }
 
 // CreateHandler returns an HTTP handler for courses creation.
-func CreateHandler(contentRepository cr.ContentRepository) gin.HandlerFunc {
+func CreateHandler(contentService creating.ContentService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req ContentRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -50,16 +52,20 @@ func CreateHandler(contentRepository cr.ContentRepository) gin.HandlerFunc {
 			return
 		}
 
-		content, err := cr.NewContent(req.Uuid, req.Title, req.Description, req.ContentType, req.Categories, req.Tags, req.Author, req.PublicationDate, req.ContentURL, req.Duration, req.Language, req.CoverImage, toCrMetadata(req.Metadata), req.Status, req.Source, req.Visibility)
+		err := contentService.CreateContent(ctx, req.Uuid, req.Title, req.Description, req.ContentType, req.Categories, req.Tags, req.Author, req.PublicationDate, req.ContentURL, req.Duration, req.Language, req.CoverImage, toCrMetadata(req.Metadata), req.Status, req.Source, req.Visibility)
+
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
-			return
-		}
-		if err := contentRepository.Save(ctx, content); err != nil {
-			ctx.JSON(http.StatusInternalServerError, err.Error())
-			return
+			switch {
+			case errors.Is(err, cr.ErrInvalidContentID),
+				errors.Is(err, cr.ErrEmptyContentTitle):
+				ctx.JSON(http.StatusBadRequest, err.Error())
+				return
+			default:
+				ctx.JSON(http.StatusInternalServerError, err.Error())
+				return
+			}
 		}
 
-		ctx.String(http.StatusCreated, "Created")
+		ctx.Status(http.StatusCreated)
 	}
 }
