@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/lorenzoMrt/ContentInsight/internal/creating"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/storage/mysql"
 )
@@ -29,6 +30,8 @@ func Run() error {
 
 	contentRepository := mysql.NewContentRepository(db)
 
-	srv := server.New(host, port, contentRepository)
+	createContentService := creating.NewContentService(contentRepository)
+
+	srv := server.New(host, port, createContentService)
 	return srv.Run()
 }
