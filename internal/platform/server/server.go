@@ -8,6 +8,8 @@ import (
 	"github.com/lorenzoMrt/ContentInsight/internal/creating"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/contents"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/health"
+	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/middleware/logging"
+	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/middleware/recovery"
 )
 
 type Server struct {
@@ -20,7 +22,7 @@ type Server struct {
 
 func New(host string, port uint, contentService creating.ContentService) Server {
 	srv := Server{
-		engine:   gin.New(),
+		engine:   gin.New(), //Can use gin.Default() for out of the box middlewares
 		httpAddr: fmt.Sprintf("%s:%d", host, port),
 	}
 
@@ -34,6 +36,8 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) registerRoutes() {
+	s.engine.Use(recovery.Middleware(), logging.Middleware())
+
 	s.engine.GET("/health", health.CheckHandler())
 	s.engine.POST("/api/contents", contents.CreateHandler(s.contentService))
 }
