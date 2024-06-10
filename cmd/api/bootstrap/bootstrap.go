@@ -7,7 +7,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	cr "github.com/lorenzoMrt/ContentInsight/internal"
 	"github.com/lorenzoMrt/ContentInsight/internal/creating"
+	"github.com/lorenzoMrt/ContentInsight/internal/increasing"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/bus/inmemory"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/storage/mysql"
@@ -40,9 +42,15 @@ func Run() error {
 	contentRepository := mysql.NewContentRepository(db)
 
 	createContentService := creating.NewContentService(contentRepository, eventBus)
+	increasingContentCounterService := increasing.NewContentCounterService()
 
 	createContentCommandHandler := creating.NewContentCommandHandler(createContentService)
 	commandBus.Register(creating.ContentCommandType, createContentCommandHandler)
+
+	eventBus.Subscribe(
+		cr.ContentCreatedEventType,
+		creating.NewIncreaseContentsCounterOnContentCreated(increasingContentCounterService),
+	)
 
 	ctx, srv := server.New(context.Background(), host, port, shutdownTimeout, commandBus)
 	return srv.Run(ctx)
