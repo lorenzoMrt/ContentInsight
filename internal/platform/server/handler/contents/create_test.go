@@ -10,20 +10,22 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/lorenzoMrt/ContentInsight/internal/creating"
-	"github.com/lorenzoMrt/ContentInsight/internal/platform/storage/storagemocks"
+	"github.com/lorenzoMrt/ContentInsight/kit/command/commandmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestCreateHandler(t *testing.T) {
-	contentRepository := new(storagemocks.ContentRepository)
-	contentRepository.On("Save", mock.Anything, mock.AnythingOfType("cr.Content")).Return(nil)
-	createContentService := creating.NewContentService(contentRepository)
+	commandBus := new(commandmocks.Bus)
+	commandBus.On(
+		"Dispatch",
+		mock.Anything,
+		mock.AnythingOfType("creating.ContentCommand"),
+	).Return(nil)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
-	router.POST("/create", CreateHandler(createContentService))
+	router.POST("/create", CreateHandler(commandBus))
 
 	t.Run("200 OK", func(t *testing.T) {
 		// Prepare the request payload
@@ -57,13 +59,10 @@ func TestCreateHandler(t *testing.T) {
 		assert.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 
-		// Create a response recorder to capture the response
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-
-		contentRepository.AssertCalled(t, "Save", mock.Anything, mock.AnythingOfType("cr.Content"))
 
 	})
 

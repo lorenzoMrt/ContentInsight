@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
 	"github.com/lorenzoMrt/ContentInsight/internal/creating"
+	"github.com/lorenzoMrt/ContentInsight/kit/command"
 )
 
 type ContentRequest struct {
@@ -35,8 +36,8 @@ type Metadata struct {
 }
 
 // Convert ContentRequest.Metadata to cr.Metadata
-func toCrMetadata(metadata Metadata) cr.Metadata {
-	return cr.Metadata{
+func toCreatingMetadata(metadata Metadata) creating.Metadata {
+	return creating.Metadata{
 		Views:    metadata.Views,
 		Likes:    metadata.Likes,
 		Comments: metadata.Comments,
@@ -44,7 +45,7 @@ func toCrMetadata(metadata Metadata) cr.Metadata {
 }
 
 // CreateHandler returns an HTTP handler for courses creation.
-func CreateHandler(contentService creating.ContentService) gin.HandlerFunc {
+func CreateHandler(commandBus command.Bus) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req ContentRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -52,7 +53,7 @@ func CreateHandler(contentService creating.ContentService) gin.HandlerFunc {
 			return
 		}
 
-		err := contentService.CreateContent(ctx, req.Uuid, req.Title, req.Description, req.ContentType, req.Categories, req.Tags, req.Author, req.PublicationDate, req.ContentURL, req.Duration, req.Language, req.CoverImage, toCrMetadata(req.Metadata), req.Status, req.Source, req.Visibility)
+		err := commandBus.Dispatch(ctx, creating.NewContentCommand(req.Uuid, req.Title, req.Description, req.ContentType, req.Categories, req.Tags, req.Author, req.PublicationDate, req.ContentURL, req.Duration, req.Language, req.CoverImage, toCreatingMetadata(req.Metadata), req.Status, req.Source, req.Visibility))
 
 		if err != nil {
 			switch {

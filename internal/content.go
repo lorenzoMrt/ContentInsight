@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lorenzoMrt/ContentInsight/kit/event"
 )
 
 var ErrInvalidContentID = errors.New("invalid Content ID")
@@ -75,6 +76,8 @@ type Content struct {
 	status          string
 	source          string
 	visibility      string
+
+	events []event.Event
 }
 type Metadata struct {
 	Views    int
@@ -92,7 +95,7 @@ func NewContent(id string, title string, description string, contentType string,
 	if err != nil {
 		return Content{}, err
 	}
-	return Content{
+	content := Content{
 		id:              idVO,
 		title:           contentTitleVO,
 		description:     description,
@@ -109,7 +112,9 @@ func NewContent(id string, title string, description string, contentType string,
 		status:          status,
 		source:          source,
 		visibility:      visibility,
-	}, nil
+	}
+	content.Record(NewContentCreatedEvent(idVO.String(), contentTitleVO.String(), description, contentType, author, contentUrl, language, coverImage, status, source, visibility, categories, tags, metadata, duration, publicationDate))
+	return content, nil
 }
 
 // Getters
@@ -170,4 +175,15 @@ func (c Content) Source() string {
 
 func (c Content) Visibility() string {
 	return c.visibility
+}
+
+func (c *Content) Record(evt event.Event) {
+	c.events = append(c.events, evt)
+}
+
+func (c Content) PullEvents() []event.Event {
+	evt := c.events
+	c.events = []event.Event{}
+
+	return evt
 }

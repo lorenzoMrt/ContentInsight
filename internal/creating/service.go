@@ -5,15 +5,18 @@ import (
 	"time"
 
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
+	"github.com/lorenzoMrt/ContentInsight/kit/event"
 )
 
 type ContentService struct {
 	contentRepository cr.ContentRepository
+	eventBus          event.Bus
 }
 
-func NewContentService(contentRepository cr.ContentRepository) ContentService {
+func NewContentService(contentRepository cr.ContentRepository, eventBus event.Bus) ContentService {
 	return ContentService{
 		contentRepository: contentRepository,
+		eventBus:          eventBus,
 	}
 }
 
@@ -23,6 +26,9 @@ func (s ContentService) CreateContent(ctx context.Context, uuid string, title st
 	if err != nil {
 		return err
 	}
+	if err := s.contentRepository.Save(ctx, content); err != nil {
+		return err
+	}
 
-	return s.contentRepository.Save(ctx, content)
+	return s.eventBus.Publish(ctx, content.PullEvents())
 }
