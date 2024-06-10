@@ -7,6 +7,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/kelseyhightower/envconfig"
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
 	"github.com/lorenzoMrt/ContentInsight/internal/creating"
 	"github.com/lorenzoMrt/ContentInsight/internal/increasing"
@@ -28,7 +29,12 @@ const (
 )
 
 func Run() error {
-	mysqlURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+	var cfg config
+	err := envconfig.Process("MOOC", &cfg)
+	if err != nil {
+		return err
+	}
+	mysqlURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", cfg.DbUser, cfg.DbPass, cfg.DbHost, cfg.DbPort, cfg.DbName)
 	db, err := sql.Open("mysql", mysqlURI)
 	if err != nil {
 		return err
@@ -54,4 +60,16 @@ func Run() error {
 
 	ctx, srv := server.New(context.Background(), host, port, shutdownTimeout, commandBus)
 	return srv.Run(ctx)
+}
+
+type config struct {
+	Host            string        `default: "localhost"`
+	Port            uint          `default: "8080"`
+	ShutdownTimeout time.Duration `default: "10s"`
+	DbUser          string        `default: "contentInsight"`
+	DbPass          string        `default: "contentInsight123"`
+	DbHost          string        `default: "localhost"`
+	DbPort          string        `default: "3306"`
+	DbName          string        `default: "contents"`
+	DbTimeout       time.Duration `default: "5s"`
 }
