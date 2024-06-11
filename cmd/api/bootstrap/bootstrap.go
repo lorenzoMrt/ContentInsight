@@ -30,7 +30,7 @@ const (
 
 func Run() error {
 	var cfg config
-	err := envconfig.Process("MOOC", &cfg)
+	err := envconfig.Process("CR", &cfg)
 	if err != nil {
 		return err
 	}

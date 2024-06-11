@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  rc-api:
+    build: .
+    environment:
+      CR_HOST: 0.0.0.0
+      CR_DBHOST: mysql
+    ports:
+      - 8080:8080
+
+  mysql:
+    image: mysql:8.4
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_DATABASE: contents
+      MYSQL_USER: contentInsight
+      MYSQL_PASSWORD: contentInsight123
+      MYSQL_ROOT_PASSWORD: contentInsight123
+
+volumes:
+  mysql_data:
