@@ -10,31 +10,39 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/contents"
-	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/handler/health"
-	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/middleware/logging"
-	"github.com/lorenzoMrt/ContentInsight/internal/platform/server/middleware/recovery"
+	kitlog "github.com/go-kit/log"
+	"github.com/lorenzoMrt/ContentInsight/internal/creating"
+	"github.com/lorenzoMrt/ContentInsight/internal/health"
 	"github.com/lorenzoMrt/ContentInsight/kit/command"
 )
 
-type Server struct {
-	httpAddr string
-	engine   *gin.Engine
-
+type ServerConfig struct {
+	httpAddr        string
 	shutdownTimeout time.Duration
-
-	// deps
-	commandBus command.Bus
 }
 
-func New(ctx context.Context, host string, port uint, shutdownTimeout time.Duration, commandBus command.Bus) (context.Context, Server) {
-	srv := Server{
-		engine:   gin.New(), //Can use gin.Default() for out of the box middlewares
+type Server struct {
+	config ServerConfig
+	engine *gin.Engine
+	logger kitlog.Logger
+	// deps
+	commandBus    command.Bus
+	healthService health.Service
+}
+
+func New(ctx context.Context, host string, port uint, shutdownTimeout time.Duration, commandBus command.Bus, logger kitlog.Logger, healthService health.Service) (context.Context, Server) {
+	cfg := ServerConfig{
 		httpAddr: fmt.Sprintf("%s:%d", host, port),
 
 		shutdownTimeout: shutdownTimeout,
+	}
+	srv := Server{
+		config: cfg,
+		engine: gin.New(), //Can use gin.Default() for out of the box middlewares
+		logger: logger,
 
-		commandBus: commandBus,
+		commandBus:    commandBus,
+		healthService: healthService,
 	}
 
 	srv.registerRoutes()
@@ -42,10 +50,10 @@ func New(ctx context.Context, host string, port uint, shutdownTimeout time.Durat
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	log.Println("Server running on", s.httpAddr)
+	s.logger.Log("Server running on", s.config.httpAddr)
 
 	srv := &http.Server{
-		Addr:    s.httpAddr,
+		Addr:    s.config.httpAddr,
 		Handler: s.engine,
 	}
 
@@ -56,17 +64,16 @@ func (s *Server) Run(ctx context.Context) error {
 	}()
 
 	<-ctx.Done()
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+	ctxShutDown, cancel := context.WithTimeout(context.Background(), s.config.shutdownTimeout)
 	defer cancel()
 
 	return srv.Shutdown(ctxShutDown)
 }
 
 func (s *Server) registerRoutes() {
-	s.engine.Use(recovery.Middleware(), logging.Middleware())
-
-	s.engine.GET("/health", health.CheckHandler())
-	s.engine.POST("/api/contents", contents.CreateHandler(s.commandBus))
+	httpLogger := kitlog.With(s.logger, "component", "http")
+	s.engine.GET("/health", health.MakeHandler(s.healthService, httpLogger))
+	s.engine.POST("/contents/v1/", creating.MakeHandler(s.commandBus, httpLogger))
 }
 
 func serverContext(ctx context.Context) context.Context {
