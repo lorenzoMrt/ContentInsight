@@ -40,7 +40,7 @@ func Run() error {
 		eventBus   = inmemory.NewEventBus()
 	)
 
-	contentRepository := mysql.NewContentRepository(db)
+	contentRepository := mysql.NewContentRepository(db, cfg.DbTimeout)
 
 	createContentService := creating.NewService(contentRepository, eventBus)
 	increasingContentCounterService := increasing.NewContentCounterService()
@@ -67,5 +67,5 @@ type config struct {
 	DbHost          string        `default:"localhost"`
 	DbPort          string        `default:"3306"`
 	DbName          string        `default:"contents"`
-	DbTimeout       time.Duration `default:"5s"`
+	DbTimeout       time.Duration `default:"10s"`
 }

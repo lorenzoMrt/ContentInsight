@@ -38,7 +38,7 @@ func New(ctx context.Context, host string, port uint, shutdownTimeout time.Durat
 	}
 	srv := Server{
 		config: cfg,
-		engine: gin.New(), //Can use gin.Default() for out of the box middlewares
+		engine: gin.New(),
 		logger: logger,
 
 		commandBus:    commandBus,
