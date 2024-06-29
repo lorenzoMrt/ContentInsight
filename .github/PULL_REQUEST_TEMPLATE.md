@@ -1,5 +1,3 @@
-# Pull Request Template
-
 ## Description
 
 Please include a summary of the changes and the related issue. Explain the motivation behind this PR and any additional context.
