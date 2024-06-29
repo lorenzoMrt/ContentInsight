@@ -74,11 +74,11 @@ func (c ContentCommand) Type() command.Type {
 // ContentCommandHandler is the command handler
 // responsible for creating Contents.
 type ContentCommandHandler struct {
-	service ContentService
+	service Service
 }
 
 // NewContentCommandHandler initializes a new ContentCommandHandler.
-func NewContentCommandHandler(service ContentService) ContentCommandHandler {
+func NewContentCommandHandler(service Service) ContentCommandHandler {
 	return ContentCommandHandler{
 		service: service,
 	}

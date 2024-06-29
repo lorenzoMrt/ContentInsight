@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/huandu/go-sqlbuilder"
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
@@ -12,12 +13,14 @@ import (
 
 // ContentRepository is a MySQL cr.ContentRepository implementation.
 type ContentRepository struct {
-	db *sql.DB
+	db        *sql.DB
+	dbTimeout time.Duration
 }
 
-func NewContentRepository(db *sql.DB) *ContentRepository {
+func NewContentRepository(db *sql.DB, dbTimeout time.Duration) *ContentRepository {
 	return &ContentRepository{
-		db: db,
+		db:        db,
+		dbTimeout: dbTimeout,
 	}
 }
 
@@ -66,9 +69,18 @@ func (repo *ContentRepository) Save(ctx context.Context, content cr.Content) err
 		Visibility:      content.Visibility(),
 	}).Build()
 
-	_, err = repo.db.ExecContext(ctx, query, args...)
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), repo.dbTimeout)
+	defer cancel()
+
+	_, err = repo.db.ExecContext(ctxTimeout, query, args...)
 	if err != nil {
-		return fmt.Errorf("error trying to persist content on database: %v", err)
+		if err == context.Canceled {
+			return fmt.Errorf("query canceled due to context cancellation")
+
+		} else {
+
+			return fmt.Errorf("error trying to persist content on database: %v", err)
+		}
 	}
 
 	return nil

@@ -38,7 +38,7 @@ func Test_Produce_error(t *testing.T) {
 		WithArgs(contentID, contentTitle, contentDescription, contentType, jsonCategories, jsonTags, author, publicationDate, url, nil, "video", "nil", jsonMetadata, "nil", "nil", "").
 		WillReturnError(errors.New("something-failed"))
 
-	repo := NewContentRepository(db)
+	repo := NewContentRepository(db, 5*time.Second)
 	// Act
 	// Call the function you want to test
 	err = repo.Save(context.Background(), content)
@@ -73,7 +73,7 @@ func Test_Save_Succeed(t *testing.T) {
 		WithArgs(contentID, contentTitle, contentDescription, contentType, jsonCategories, jsonTags, author, publicationDate, url, nil, "video", "nil", jsonMetadata, "nil", "nil", "").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	repo := NewContentRepository(db)
+	repo := NewContentRepository(db, 5*time.Second)
 	// Act
 	// Call the function you want to test
 	err = repo.Save(context.Background(), content)

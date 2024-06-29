@@ -8,19 +8,22 @@ import (
 	"github.com/lorenzoMrt/ContentInsight/kit/event"
 )
 
-type ContentService struct {
+type Service interface {
+	CreateContent(ctx context.Context, uuid string, title string, description string, contentType string, categories []string, tags []string, author string, publicationDate time.Time, contentURL string, duration *int, language string, coverImage string, metadata cr.Metadata, status string, source string, visibility string) error
+}
+type service struct {
 	contentRepository cr.ContentRepository
 	eventBus          event.Bus
 }
 
-func NewContentService(contentRepository cr.ContentRepository, eventBus event.Bus) ContentService {
-	return ContentService{
+func NewService(contentRepository cr.ContentRepository, eventBus event.Bus) Service {
+	return &service{
 		contentRepository: contentRepository,
 		eventBus:          eventBus,
 	}
 }
 
-func (s ContentService) CreateContent(ctx context.Context, uuid string, title string, description string, contentType string, categories []string, tags []string, author string, publicationDate time.Time, contentURL string, duration *int, language string, coverImage string, metadata cr.Metadata, status string, source string, visibility string) error {
+func (s *service) CreateContent(ctx context.Context, uuid string, title string, description string, contentType string, categories []string, tags []string, author string, publicationDate time.Time, contentURL string, duration *int, language string, coverImage string, metadata cr.Metadata, status string, source string, visibility string) error {
 	content, err := cr.NewContent(uuid, title, description, contentType, categories, tags, author, publicationDate, contentURL, duration, language, coverImage, metadata, status, source, visibility)
 
 	if err != nil {

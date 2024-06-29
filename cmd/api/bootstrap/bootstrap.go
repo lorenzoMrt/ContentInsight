@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/go-kit/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kelseyhightower/envconfig"
 	cr "github.com/lorenzoMrt/ContentInsight/internal"
 	"github.com/lorenzoMrt/ContentInsight/internal/creating"
+	"github.com/lorenzoMrt/ContentInsight/internal/health"
 	"github.com/lorenzoMrt/ContentInsight/internal/increasing"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/bus/inmemory"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server"
@@ -17,7 +20,7 @@ import (
 )
 
 func Run() error {
-	var cfg Config
+	var cfg config
 	err := envconfig.Process("CR", &cfg)
 	if err != nil {
 		return err
@@ -28,15 +31,20 @@ func Run() error {
 		return err
 	}
 
+	var logger log.Logger
+	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+
 	var (
 		commandBus = inmemory.NewCommandBus()
 		eventBus   = inmemory.NewEventBus()
 	)
 
-	contentRepository := mysql.NewContentRepository(db)
+	contentRepository := mysql.NewContentRepository(db, cfg.DbTimeout)
 
-	createContentService := creating.NewContentService(contentRepository, eventBus)
+	createContentService := creating.NewService(contentRepository, eventBus)
 	increasingContentCounterService := increasing.NewContentCounterService()
+	healthService := health.NewService()
 
 	createContentCommandHandler := creating.NewContentCommandHandler(createContentService)
 	commandBus.Register(creating.ContentCommandType, createContentCommandHandler)
@@ -46,11 +54,11 @@ func Run() error {
 		creating.NewIncreaseContentsCounterOnContentCreated(increasingContentCounterService),
 	)
 
-	ctx, srv := server.New(context.Background(), cfg.Host, cfg.Port, cfg.ShutdownTimeout, commandBus)
+	ctx, srv := server.New(context.Background(), cfg.Host, cfg.Port, cfg.ShutdownTimeout, commandBus, logger, healthService)
 	return srv.Run(ctx)
 }
 
-type Config struct {
+type config struct {
 	Host            string        `default:"localhost"`
 	Port            uint          `default:"8080"`
 	ShutdownTimeout time.Duration `default:"10s"`
