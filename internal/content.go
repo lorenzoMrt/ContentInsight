@@ -33,6 +33,7 @@ func (id ContentID) String() string {
 }
 
 var ErrEmptyContentTitle = errors.New("The title can not be empty")
+var ErrContentNotFound = errors.New("No content found")
 
 type ContentTitle struct {
 	value string
@@ -55,6 +56,7 @@ func (title ContentTitle) String() string {
 
 type ContentRepository interface {
 	Save(ctx context.Context, content Content) error
+	QueryByUuid(ctx context.Context, uuid string) (Content, error)
 }
 
 //go:generate mockery --case=snake --outpkg=storagemocks --output=platform/storage/storagemocks --name=ContentRepository

@@ -16,7 +16,7 @@ type service struct {
 	eventBus          event.Bus
 }
 
-func NewService(contentRepository cr.ContentRepository, eventBus event.Bus) Service {
+func NewService(contentRepository cr.ContentRepository, eventBus event.Bus) *service {
 	return &service{
 		contentRepository: contentRepository,
 		eventBus:          eventBus,

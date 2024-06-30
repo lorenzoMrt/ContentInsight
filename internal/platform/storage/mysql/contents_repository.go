@@ -85,3 +85,21 @@ func (repo *ContentRepository) Save(ctx context.Context, content cr.Content) err
 
 	return nil
 }
+
+func (repo *ContentRepository) QueryByUuid(ctx context.Context, uuid string) (sqlContent, error) {
+	contentSqlStruct := sqlbuilder.NewStruct(new(sqlContent))
+	query, args := contentSqlStruct.SelectFrom(sqlContentTable).Where("uuid = ?", uuid).Build()
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), repo.dbTimeout)
+	defer cancel()
+
+	row := repo.db.QueryRowContext(ctxTimeout, query, args)
+	var content sqlContent
+	if err := row.Scan(contentSqlStruct.Addr(&content)...); err != nil {
+		if err == sql.ErrNoRows {
+			return sqlContent{}, nil
+		}
+		return sqlContent{}, err
+	}
+
+	return content, nil
+}
