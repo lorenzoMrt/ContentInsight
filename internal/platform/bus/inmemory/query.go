@@ -21,7 +21,7 @@ func NewQueryBus() *QueryBus {
 }
 
 // Dispatch implements the query.Bus interface.
-func (b *QueryBus) Ask(ctx context.Context, cmd query.Query) (cr.ContentResponse, error) {
+func (b *QueryBus) Ask(ctx context.Context, cmd query.Query) (interface{}, error) {
 	handler, ok := b.handlers[cmd.Type()]
 	if !ok {
 		return cr.ContentResponse{}, nil

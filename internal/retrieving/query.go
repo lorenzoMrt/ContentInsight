@@ -34,7 +34,7 @@ func NewContentQueryHandler(service Service) ContentQueryHandler {
 	}
 }
 
-func (h ContentQueryHandler) Handle(ctx context.Context, query query.Query) (cr.ContentResponse, error) {
+func (h ContentQueryHandler) Handle(ctx context.Context, query query.Query) (interface{}, error) {
 	queryContentCmd, ok := query.(ContentQuery)
 	if !ok {
 		return cr.ContentResponse{}, errors.New("unexpected query")

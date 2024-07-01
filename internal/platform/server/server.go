@@ -13,7 +13,9 @@ import (
 	kitlog "github.com/go-kit/log"
 	"github.com/lorenzoMrt/ContentInsight/internal/creating"
 	"github.com/lorenzoMrt/ContentInsight/internal/health"
+	"github.com/lorenzoMrt/ContentInsight/internal/retrieving"
 	"github.com/lorenzoMrt/ContentInsight/kit/command"
+	"github.com/lorenzoMrt/ContentInsight/kit/query"
 )
 
 type ServerConfig struct {
@@ -27,10 +29,11 @@ type Server struct {
 	logger kitlog.Logger
 	// deps
 	commandBus    command.Bus
+	queryBus      query.Bus
 	healthService health.Service
 }
 
-func New(ctx context.Context, host string, port uint, shutdownTimeout time.Duration, commandBus command.Bus, logger kitlog.Logger, healthService health.Service) (context.Context, Server) {
+func New(ctx context.Context, host string, port uint, shutdownTimeout time.Duration, commandBus command.Bus, queryBus query.Bus, logger kitlog.Logger, healthService health.Service) (context.Context, Server) {
 	cfg := ServerConfig{
 		httpAddr: fmt.Sprintf("%s:%d", host, port),
 
@@ -42,6 +45,7 @@ func New(ctx context.Context, host string, port uint, shutdownTimeout time.Durat
 		logger: logger,
 
 		commandBus:    commandBus,
+		queryBus:      queryBus,
 		healthService: healthService,
 	}
 
@@ -74,6 +78,7 @@ func (s *Server) registerRoutes() {
 	httpLogger := kitlog.With(s.logger, "component", "http")
 	s.engine.GET("/health", health.MakeHandler(s.healthService, httpLogger))
 	s.engine.POST("/contents/v1/", creating.MakeHandler(s.commandBus, httpLogger))
+	s.engine.GET("/contents/v1/", retrieving.MakeHandler(s.queryBus, httpLogger))
 }
 
 func serverContext(ctx context.Context) context.Context {

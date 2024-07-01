@@ -14,6 +14,34 @@ type ContentRepository struct {
 	mock.Mock
 }
 
+// QueryByUuid provides a mock function with given fields: ctx, uuid
+func (_m *ContentRepository) QueryByUuid(ctx context.Context, uuid string) (cr.Content, error) {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for QueryByUuid")
+	}
+
+	var r0 cr.Content
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (cr.Content, error)); ok {
+		return rf(ctx, uuid)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) cr.Content); ok {
+		r0 = rf(ctx, uuid)
+	} else {
+		r0 = ret.Get(0).(cr.Content)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, uuid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Save provides a mock function with given fields: ctx, content
 func (_m *ContentRepository) Save(ctx context.Context, content cr.Content) error {
 	ret := _m.Called(ctx, content)

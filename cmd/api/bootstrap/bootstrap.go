@@ -17,6 +17,7 @@ import (
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/bus/inmemory"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/server"
 	"github.com/lorenzoMrt/ContentInsight/internal/platform/storage/mysql"
+	"github.com/lorenzoMrt/ContentInsight/internal/retrieving"
 )
 
 func Run() error {
@@ -38,23 +39,28 @@ func Run() error {
 	var (
 		commandBus = inmemory.NewCommandBus()
 		eventBus   = inmemory.NewEventBus()
+		queryBus   = inmemory.NewQueryBus()
 	)
 
 	contentRepository := mysql.NewContentRepository(db, cfg.DbTimeout)
 
-	createContentService := creating.NewService(contentRepository, eventBus)
 	increasingContentCounterService := increasing.NewContentCounterService()
 	healthService := health.NewService()
 
+	createContentService := creating.NewService(contentRepository, eventBus)
 	createContentCommandHandler := creating.NewContentCommandHandler(createContentService)
 	commandBus.Register(creating.ContentCommandType, createContentCommandHandler)
+
+	retrieveContentService := retrieving.NewService(contentRepository, eventBus)
+	contentQueryHandler := retrieving.NewContentQueryHandler(retrieveContentService)
+	queryBus.Register(retrieving.ContentQueryType, contentQueryHandler)
 
 	eventBus.Subscribe(
 		cr.ContentCreatedEventType,
 		creating.NewIncreaseContentsCounterOnContentCreated(increasingContentCounterService),
 	)
 
-	ctx, srv := server.New(context.Background(), cfg.Host, cfg.Port, cfg.ShutdownTimeout, commandBus, logger, healthService)
+	ctx, srv := server.New(context.Background(), cfg.Host, cfg.Port, cfg.ShutdownTimeout, commandBus, queryBus, logger, healthService)
 	return srv.Run(ctx)
 }
 
